@@ -187,6 +187,7 @@ According to the plot above, the latitude, sqft living, and grade variables cont
 
   - Construct a SHAP graph and interpret it. Does it tell a similar story to the break-down plot?
 
+Observation 1:
 ```{r}
 rf_shap <-predict_parts(explainer = rf_explain,
                         new_observation = obs1,
@@ -196,11 +197,37 @@ rf_shap <-predict_parts(explainer = rf_explain,
 
 plot(rf_shap)
 ```
+This tells a similar story because the top three variables are consistent.
+
+Observation 2:
+```{r}
+rf_shap2 <-predict_parts(explainer = rf_explain,
+                        new_observation = obs2,
+                        type = "shap",
+                        B = 10 #number of reorderings - start small
+                        )
+
+plot(rf_shap2)
+```
+This tells a similar story because the top three variables are consistent.
+
+
+Observation 3:
+```{r}
+rf_shap3 <-predict_parts(explainer = rf_explain,
+                        new_observation = obs3,
+                        type = "shap",
+                        B = 10 #number of reorderings - start small
+                        )
+
+plot(rf_shap3)
+```
+This tells a similar story because the top three variables are consistent.
 
 
   - Construct a LIME graph (follow my code carefully). How close is each original prediction to the prediction from the local model? Interpret the result. You can also try using fewer or more variables in the local model than I used in the example.  
 
-
+Observation 1:
 ```{r}
 set.seed(2)
 
@@ -226,6 +253,62 @@ plot(lime_rf) +
 ```
 
 From the above results, we see that local model prediction is 6.041654 and the original random forst model prediction is 6.15685. So, the difference is not large, and is around .1. The most important predictors in this model are square foot living, latitude, and square foot living 15 because we can see that their bars are larger, indicating a stronger weight. 
+
+
+Observation 2:
+```{r}
+set.seed(2)
+# NEED these two lines of code always!
+# They make sure our explainer is defined correctly to use in the next step
+model_type.dalex_explainer <- DALEXtra::model_type.dalex_explainer
+predict_model.dalex_explainer <- DALEXtra::predict_model.dalex_explainer
+
+lime_rf2 <- DALEXtra::predict_surrogate(explainer = rf_explain,
+                             new_observation = obs2 %>%
+                               select(-log_price), 
+                             n_features = 5,
+                             n_permutations = 1000,
+                             type = "lime")
+
+lime_rf2 %>% 
+  select(model_r2, model_prediction, prediction) %>% 
+  distinct()
+
+# create the plot
+plot(lime_rf2) +
+  labs(x = "Variable")
+```
+From the above results, we see that local model prediction is 5.430989 and the original random forst model prediction is 5.394901. So, the difference is not large, and is less than .1. The most important predictors in this model are square foot living, latitude, and square foot living 15 because we can see that their bars are larger, indicating a stronger weight. 
+
+
+Observation 3:
+```{r}
+# NEED these two lines of code always!
+# They make sure our explainer is defined correctly to use in the next step
+model_type.dalex_explainer <- DALEXtra::model_type.dalex_explainer
+predict_model.dalex_explainer <- DALEXtra::predict_model.dalex_explainer
+
+lime_rf3 <- predict_surrogate(explainer = rf_explain,
+                             new_observation = obs3 %>%
+                               select(-log_price), 
+                             n_features = 5,
+                             n_permutations = 1000,
+                             type = "lime")
+
+lime_rf3 %>% 
+  select(model_r2, model_prediction, prediction) %>% 
+  distinct()
+
+# create the plot
+plot(lime_rf3) +
+  labs(x = "Variable")
+```  
+
+From the above results, we see that local model prediction is 5.589107 and the original random forst model prediction is 5.719989. So, the difference is not large, and is around .1. The most important predictors in this model are square foot living, latitude, and square foot living 15 because we can see that their bars are larger, indicating a stronger weight. 
+
+
+\
+
   
 2. Describe how you would use the interpretable machine learning tools we've learned (both local and global) in future machine learning projects? How does each of them help you?
 
