@@ -53,6 +53,9 @@ From now on, GitHub should be part of your routine when doing assignments. I rec
 **Github**: My homework 3 link is: [here](https://github.com/ehofrenning/datasci_hw3).
 
 
+\
+
+
 
 ## Local Interpretable Machine Learning
 
@@ -182,6 +185,7 @@ pp_rf3 <- predict_parts(explainer = rf_explain,
 # Break-down plot
 plot(pp_rf3)
 ```
+
 According to the plot above, the latitude, sqft living, and grade variables contribute the most to this observation's prediction. All three observations are pretty consistent with this.
 
 
@@ -197,7 +201,9 @@ rf_shap <-predict_parts(explainer = rf_explain,
 
 plot(rf_shap)
 ```
+
 This tells a similar story because the top three variables are consistent.
+
 
 Observation 2:
 ```{r}
@@ -209,7 +215,9 @@ rf_shap2 <-predict_parts(explainer = rf_explain,
 
 plot(rf_shap2)
 ```
+
 This tells a similar story because the top three variables are consistent.
+
 
 
 Observation 3:
@@ -222,7 +230,9 @@ rf_shap3 <-predict_parts(explainer = rf_explain,
 
 plot(rf_shap3)
 ```
+
 This tells a similar story because the top three variables are consistent.
+
 
 
   - Construct a LIME graph (follow my code carefully). How close is each original prediction to the prediction from the local model? Interpret the result. You can also try using fewer or more variables in the local model than I used in the example.  
@@ -255,6 +265,7 @@ plot(lime_rf) +
 From the above results, we see that local model prediction is 6.041654 and the original random forst model prediction is 6.15685. So, the difference is not large, and is around .1. The most important predictors in this model are square foot living, latitude, and square foot living 15 because we can see that their bars are larger, indicating a stronger weight. 
 
 
+
 Observation 2:
 ```{r}
 set.seed(2)
@@ -278,7 +289,9 @@ lime_rf2 %>%
 plot(lime_rf2) +
   labs(x = "Variable")
 ```
+
 From the above results, we see that local model prediction is 5.430989 and the original random forst model prediction is 5.394901. So, the difference is not large, and is less than .1. The most important predictors in this model are square foot living, latitude, and square foot living 15 because we can see that their bars are larger, indicating a stronger weight. 
+
 
 
 Observation 3:
@@ -307,6 +320,7 @@ plot(lime_rf3) +
 From the above results, we see that local model prediction is 5.589107 and the original random forst model prediction is 5.719989. So, the difference is not large, and is around .1. The most important predictors in this model are square foot living, latitude, and square foot living 15 because we can see that their bars are larger, indicating a stronger weight. 
 
 
+
 \
 
   
@@ -315,17 +329,46 @@ From the above results, we see that local model prediction is 5.589107 and the o
 In future machine learning projects, I think that the break-down and LIME plots will be helpful in telling a story about the model we are using. The provide nice visual representations of what predictors are the most important to the model and which ones should be focused on in my interpretations. In addition to this, the model stacking tutorial was very useful and a really cool way to improve predictions. In addition, it may be a nice way to decide which model type not to use, as well. 
 
 
+
 ## SQL
 
 You will use the `airlines` data from the SQL database that I used in the example in the [tutorial](https://advanced-ds-in-r.netlify.app/posts/2021-03-29-sqlinr/). Be sure to include the chunk to connect to the database here. And, when you are finished, disconnect. You may need to reconnect throughout as it times out after a while.
 
+```{r}
+library(mdsr)
+library(dbplyr)      # for SQL query "cheating" - part of tidyverse but needs to be loaded separately
+library(RMySQL)      # for accessing MySQL databases
+library(RSQLite)     # for accessing SQLite databases
+con_air <- dbConnect_scidb("airlines")
+dbListFields(con_air, "flights")
+```
+
 **Tasks**:
 
 1. Create a SQL chunk and an equivalent R code chunk that does the following: for each airport (with its name, not code), year, and month find the total number of departing flights, the distinct destinations to which they flew, the average length of the flight, the average distance of the flight, and the proportion of flights that arrived more than 20 minutes late. In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code).  
+
+
+
+```{r}
+#airport name,year, month: # total departing flights, # total distinct destinations, ave length of flight, ave distance of flight, proportion of flights more than 20 minutes late.
+tbl(con_air, "flights") %>% 
+  group_by(origin, year, month) %>%
+  mutate(delayed20 = arr_delay >= 20) %>%
+  summarise(total_departing = n_distinct(dest),
+            ave_length = mean(air_time),
+            ave_distance = mean(distance),
+            prop_late_flights = (sum(arr_delay >= 20))/n()) 
+
+```
+
+
+
   - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous (those of you who weren't in my intro data science class this year may want to watch Will Chase's [Glamour of Graphics](https://www.youtube.com/watch?v=h5cTacaWE6I) talk for inspiration).  
+  
   - Although your graph was truly inspirational, you've been requested to "boil it down to a few numbers." Some people just don't appreciate all that effort you put in. And, you need to use the already summarized data that you already pulled in from SQL. Create a table with 6 or fewer rows and 3 or fewer columns that summarizes which airport is the "worst" in terms of late arrivals. Be careful with your calculations. You may consider using the `kable`, `kableExtra`, or `gt` packages to make your table look truly spectacular.
   
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
+
 
 
 ## Function Friday
