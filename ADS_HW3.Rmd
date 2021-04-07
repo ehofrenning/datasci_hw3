@@ -336,11 +336,10 @@ You will use the `airlines` data from the SQL database that I used in the exampl
 
 ```{r}
 library(mdsr)
+library(nycflights13)
 library(dbplyr)      # for SQL query "cheating" - part of tidyverse but needs to be loaded separately
 library(RMySQL)      # for accessing MySQL databases
 library(RSQLite)     # for accessing SQLite databases
-con_air <- dbConnect_scidb("airlines")
-dbListFields(con_air, "flights")
 ```
 
 **Tasks**:
@@ -348,25 +347,86 @@ dbListFields(con_air, "flights")
 1. Create a SQL chunk and an equivalent R code chunk that does the following: for each airport (with its name, not code), year, and month find the total number of departing flights, the distinct destinations to which they flew, the average length of the flight, the average distance of the flight, and the proportion of flights that arrived more than 20 minutes late. In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code).  
 
 
-
 ```{r}
-#airport name,year, month: # total departing flights, # total distinct destinations, ave length of flight, ave distance of flight, proportion of flights more than 20 minutes late.
+con_air <- dbConnect(RMySQL::MySQL(), 
+                     dbname = "airlines", 
+                     host = "mdsr.cdc7tgkkqd0n.us-east-1.rds.amazonaws.com", 
+                     user = "mdsr_public", 
+                     password = "ImhsmflMDSwR")
+
+# the R code
+airports_info <-
 tbl(con_air, "flights") %>% 
   group_by(origin, year, month) %>%
-  mutate(delayed20 = arr_delay >= 20) %>%
-  summarise(total_departing = n_distinct(dest),
-            ave_length = mean(air_time),
-            ave_distance = mean(distance),
-            prop_late_flights = (sum(arr_delay >= 20))/n()) 
+  summarise(total_departing = n(),
+            total_distinct_destinations = n_distinct(dest),  # number of distinct destinations
+            ave_length = mean(air_time),      # average flight air time
+            ave_distance = mean(distance),   # mean departing flight distance 
+            late_flight20 = arr_delay >= 20,
+            prop_late_flights = (sum(arr_delay >= 20))/n())    # prop arrived more than 20 min late
 
+test <-
+airports_info %>%
+  collect()
+
+# the SQL code:
+airports_info %>%
+  show_query()
 ```
+
+
+*The SQL code:*
+
+SELECT `origin`, `year`, `month`, COUNT(*) AS `total_departing`, COUNT(DISTINCT `dest`) AS `total_distinct_destinations`, AVG(`air_time`) AS `ave_length`, AVG(`distance`) AS `ave_distance`, `arr_delay` >= 20.0 AS `late_flight20`, (SUM(`arr_delay` >= 20.0)) / COUNT(*) AS `prop_late_flights`
+FROM `flights`
+GROUP BY `origin`, `year`, `month`
 
 
 
   - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous (those of you who weren't in my intro data science class this year may want to watch Will Chase's [Glamour of Graphics](https://www.youtube.com/watch?v=h5cTacaWE6I) talk for inspiration).  
+
+
+The way I am defining "worst" airport as: the airports that have recorded the highest average proportion of late flights that had MORE than one flight that day and more than one destinct destinations. I conditioned on these criteria because I feel like the tiny airports that have one flight a day aren't super helpful in comparing to the rest. I've identified the top 20 "worst" airports based upon this criteria.
+  
+```{r}
+# creating a binary "worst" variable, I don't end up using this.
+test1 <- test %>%
+  mutate(worst = prop_late_flights >= .2)
+test1
+# create dataset with top 15 proportion of late flights
+worst_flights <-
+test1 %>%
+  filter(total_departing >1 & total_distinct_destinations >1) %>%
+  group_by(origin) %>%
+  summarize(ave = mean(prop_late_flights)) %>%
+  arrange(desc(ave))%>%
+  slice(c(1:20))
+
+# graph of top 15 "worst" airports 
+ggplot(worst_flights, aes(x = ave, y = reorder(origin, +ave))) + 
+  geom_col(fill = "#00AFBB") + 
+  xlab("Proportion of Flights that were Late") +
+  ylab("Airport") +
+  labs(title = "Top 20 Worst Airports")
+```
+
   
   - Although your graph was truly inspirational, you've been requested to "boil it down to a few numbers." Some people just don't appreciate all that effort you put in. And, you need to use the already summarized data that you already pulled in from SQL. Create a table with 6 or fewer rows and 3 or fewer columns that summarizes which airport is the "worst" in terms of late arrivals. Be careful with your calculations. You may consider using the `kable`, `kableExtra`, or `gt` packages to make your table look truly spectacular.
-  
+
+```{r}
+test %>%
+  filter(total_departing >1 & total_distinct_destinations >1) %>%
+  group_by(origin) %>%
+  summarize(ave_prop_late = mean(prop_late_flights),
+            ave_depart = mean(total_departing)) %>%
+  arrange(desc(ave_prop_late))%>%
+  slice(c(1:6))
+```
+
+Above, I'm looking into the 6 worst airports and reporting their average proportion of late flights and average number of departing flights. Roughly, I'm seeing a positive relationship between the amount of departing flights and the proportion of late flights. From this table, I also see that the CEC (Cedar City, UT) airport is the "worst", closely followed by OTH (North Bend, Oregon).
+
+
+
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
 
