@@ -429,6 +429,10 @@ Above, I'm looking into the 6 worst airports and reporting their average proport
 
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
+```{r}
+
+```
+
 
 
 ## Function Friday
@@ -483,16 +487,33 @@ troll_tweets <- read_csv("https://raw.githubusercontent.com/fivethirtyeight/russ
   c. Create two or three basic exploratory plots of the data (ex. plot of the different locations from which tweets were posted, plot of the account category of a tweet)
   
 ```{r}
+# a.
+troll_tweets_new <-
+troll_tweets %>%
+  filter(language == "English")
 
+# b.
+dim(troll_tweets_new)
+
+# c. 
+troll_tweets_new
+ggplot(troll_tweets_new, aes(x = following, y = followers)) + 
+  geom_jitter(alpha = .5)
+
+ggplot(troll_tweets_new, aes(x = updates)) +
+  geom_density()
+
+ggplot(troll_tweets_new, aes(x = followers)) +
+  geom_density()
 ```
 
 3. Unnest Tokens
 
 We want each row to represent a word from a tweet, rather than an entire tweet. Be sure to remove the `eval=FALSE`!!!!
 
-```{r, eval = FALSE}
-troll_tweets_untoken <- troll_tweets1 %>%
-  unnest_tokens(???,???)
+```{r}
+troll_tweets_untoken <- troll_tweets_new %>%
+  unnest_tokens(word,content)
 
 troll_tweets_untoken
 ```
@@ -502,7 +523,7 @@ troll_tweets_untoken
 
 4. Remove stopwords. Be sure to remove the `eval=FALSE`!!!!
 
-```{r, eval = FALSE}
+```{r}
 #get rid of stopwords (the, and, etc.)
 troll_tweets_cleaned <- troll_tweets_untoken %>%
   anti_join(stop_words)
@@ -511,9 +532,12 @@ troll_tweets_cleaned <- troll_tweets_untoken %>%
 Take a look at the troll_tweets_cleaned dataset.  Are there any other words/letters/numbers that we want to eliminate that weren't taken care of by stop_words? Be sure to remove the `eval=FALSE`!!!!
 
 ```{r, eval = FALSE}
+#troll_tweets_cleaned
 #get rid of http, https, t.co, rt, amp, single number digits, and singular letters
 troll_tweets_cleaned <- troll_tweets_cleaned %>%
-  filter(word != ????) # you can use %in% for a list of words
+  filter(!(word %in% c("http", "https", "t.co", "rt", "amp", " a ", " b ", " c ", " d ", " e ", " f ", " g ", " h ", " j ", " k ", " l ", " m ", " n ", " o ", " p ", " q ", " r ", " s ", " t ", " u ", " v ", " y ", " w ", " x ", " z ", "1", "2", "3", "4", "5", "6", "7", "8", "9")))
+
+troll_tweets_cleaned
 ```
 
 
@@ -521,7 +545,7 @@ troll_tweets_cleaned <- troll_tweets_cleaned %>%
 
 ```{r, eval = FALSE}
 troll_tweets_small <- troll_tweets_cleaned %>%
-  count(??) %>%
+  count(word) %>%
   slice_max(order_by = n, n = 50) # 50 most occurring words
 
 # visualize the number of times the 50 top words appear
@@ -538,17 +562,17 @@ ggplot(troll_tweets_small,
   
 Be sure to remove the `eval=FALSE`!!!!
 
-```{r, eval = FALSE}
+```{r}
 # look at sentiment
 get_sentiments("bing")
 
 # assign a sentiment to each word that has one associated
 troll_tweets_sentiment <- troll_tweets_cleaned %>%
-  inner_join(???)
+  inner_join(sentiments)
 
 # count the sentiments
 troll_tweets_sentiment %>% 
-  ???
+  count(sentiment)
 ```
 
 7. Using the troll_tweets_small dataset, make a wordcloud:
@@ -559,22 +583,23 @@ troll_tweets_sentiment %>%
 
 Be sure to remove the `eval=FALSE`!!!!
 
-```{r, eval = FALSE}
+```{r}
 # make a wordcloud where the size of the word is based on the number of times the word appears across the tweets
 
 troll_tweets_small %>%
-  with(wordcloud(word, n, max.words = ??))
+  with(wordcloud(word, n, max.words = 100))
 
 # make a wordcloud colored by sentiment
 
 troll_tweets_sentiment %>%
-  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c(??,??),
-                   max.words = ??)
+  acast(word ~ sentiment, fill = 0) %>%
+  comparison.cloud(colors = c("red","green"),
+                   max.words = 100)
 ```
 
 Are there any words whose categorization as "positive" or "negative" surprised you?
 
+Trump being classified as positive was surprising, but that was the only one.
 
 ## Projects
 
