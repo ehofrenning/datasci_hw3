@@ -347,6 +347,9 @@ library(RSQLite)     # for accessing SQLite databases
 1. Create a SQL chunk and an equivalent R code chunk that does the following: for each airport (with its name, not code), year, and month find the total number of departing flights, the distinct destinations to which they flew, the average length of the flight, the average distance of the flight, and the proportion of flights that arrived more than 20 minutes late. In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code).  
 
 
+*NOTE:* I decided to keep the original question because it ended up running for me
+
+
 ```{r}
 con_air <- dbConnect(RMySQL::MySQL(), 
                      dbname = "airlines", 
@@ -377,10 +380,11 @@ airports_info %>%
 
 *The SQL code:*
 
+```
 SELECT `origin`, `year`, `month`, COUNT(*) AS `total_departing`, COUNT(DISTINCT `dest`) AS `total_distinct_destinations`, AVG(`air_time`) AS `ave_length`, AVG(`distance`) AS `ave_distance`, `arr_delay` >= 20.0 AS `late_flight20`, (SUM(`arr_delay` >= 20.0)) / COUNT(*) AS `prop_late_flights`
 FROM `flights`
 GROUP BY `origin`, `year`, `month`
-
+```
 
 
   - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous (those of you who weren't in my intro data science class this year may want to watch Will Chase's [Glamour of Graphics](https://www.youtube.com/watch?v=h5cTacaWE6I) talk for inspiration).  
@@ -430,9 +434,56 @@ Above, I'm looking into the 6 worst airports and reporting their average proport
 
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
-```{r}
 
+**How does the size of an airline company affect its delays?**
+
+
+I'm going to define the size of an airline company by the number of flights it runs, and for delays I will look at arrivals.
+
+
+First, I do the SQL query to get the data I need:
+```{r}
+library(DBI)
+
+query1 <- "SELECT 
+  year,
+  name,
+  n_flights,
+  avg_arr_delay,
+  avg_distance
+FROM (SELECT 
+  year,
+  carrier, 
+  COUNT(*) AS n_flights, 
+  AVG(arr_delay) AS avg_arr_delay, 
+  AVG(distance) AS avg_distance
+FROM (SELECT * FROM flights LIMIT 10000) fl
+GROUP BY year, carrier) smry
+INNER JOIN carriers AS c 
+  ON (smry.carrier = c.carrier)
+ORDER BY year, avg_arr_delay DESC;"
+
+con_air <- dbConnect(RMySQL::MySQL(), 
+                     dbname = "airlines", 
+                     host = "mdsr.cdc7tgkkqd0n.us-east-1.rds.amazonaws.com", 
+                     user = "mdsr_public", 
+                     password = "ImhsmflMDSwR")
+
+res <- as_tibble(dbGetQuery(con_air, query1))
 ```
+
+
+Next, I plot the data into a graph:
+```{r}
+res %>%
+  ggplot(aes(x = n_flights, y = avg_arr_delay, color = name)) + 
+  geom_point() + 
+  xlab("Flights") +
+  ylab("Average Arrival Delay") +
+  labs(title = "Airline Size and Flight Delays")
+```
+
+I see a generally negative trend, wherein airline companies that are smaller (run fewer flights on average) have longer delays. Whereas the larger airlines tend to see shorter delays. 
 
 
 
