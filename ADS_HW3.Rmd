@@ -427,6 +427,7 @@ Above, I'm looking into the 6 worst airports and reporting their average proport
 
 
 
+
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
 ```{r}
@@ -668,8 +669,13 @@ Read the project description on the moodle page. Talk to your group members abou
 
 Write a short paragraph about ideas you have. If you already have some data sources in mind, you can link to those, but I'm more concerned with you having a topic that you're interested in investigating right now. 
 
+I've been thinking about doing something related to covid and happiness, or something dance/theatre institution related (last semester a class I took compiled a huge dataset of gender/race/employment information about MSP arts and it would be cool to use it, but it's also not ideal because it's at the company level, not employee level-- and it's pretty incomplete so now that I think about it, it'd be a lot of work to finish it).
+
 ## "Undoing" bias
 
 **Task:**
 
 Read this tweet [thread](https://threadreaderapp.com/thread/1375957284061376516.html) by [Deb Raji](https://en.wikipedia.org/wiki/Deborah_Raji) who you may remember from the *Coded Bias* film. Write a short paragraph that discusses at least one of the misconceptions.
+
+The point about how race and gender are often the hardest biases to detect was interesting because this information is not always available. So, it makes me think about how we can identify ways of helping aleiviate this bias when so much information is protected. This kind of relates to something mentioned in the fourth point about how diversifying data may lead to privacy violations. An interesting balance that I don't know could ever be solved? Even if we had all the information in the world, how do our approaches change, and what problems would we *still* have in terms of bias?
+
